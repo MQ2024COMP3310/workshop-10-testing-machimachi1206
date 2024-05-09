@@ -3,8 +3,6 @@ from flask import current_app
 from project import create_app, db
 from project.models import User
 from werkzeug.security import check_password_hash
-
-
 class TestWebApp(unittest.TestCase):
     def setUp(self):
         self.app = create_app({
@@ -83,6 +81,12 @@ class TestWebApp(unittest.TestCase):
 
     def test_xss_vulnerability(self):
         # TODO: Can we store javascript tags in the username field?
+        malicious_username = '<Script>alert("XSS")</script>'
+        response = self.client.post('/signup', data={
+            'username': malicious_username,
+            'password': 'password123'
+        }, follow_redirects=True)
         assert False
+        
 
 

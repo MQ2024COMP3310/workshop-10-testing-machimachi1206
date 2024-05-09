@@ -4,6 +4,8 @@ from sqlalchemy import text
 from .models import User
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import request, redirect, url_for, flash
+from project.models import User, db
 
 auth = Blueprint('auth', __name__)
 
@@ -36,24 +38,22 @@ def signup():
 
 @auth.route('/signup', methods=['POST'])
 def signup_post():
-    email = request.form.get('email')
-    name = request.form.get('name')
-    password = request.form.get('password')
-
-    user = db.session.execute(text('select * from user where email = "' + email +'"')).all()
-    if len(user) > 0: # if a user is found, we want to redirect back to signup page so user can try again
-        flash('Email address already exists')  # 'flash' function stores a message accessible in the template code.
-        current_app.logger.debug("User email already exists")
+    email = request.form['email']
+    name = request.form['name']
+    password = request.form['password'] 
+# Check if user already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        flash('Email address already in use.')
         return redirect(url_for('auth.signup'))
-
-    # create a new user with the form data. TODO: Hash the password so the plaintext version isn't saved.
-    new_user = User(email=email, name=name, password=password)
-
-    # add the new user to the database
+# Create new user instance
+    new_user = User(email=email, password=password)  # Assume password hashing is handled in the User model 
+    # Add new user to the database
     db.session.add(new_user)
     db.session.commit()
 
-    return redirect(url_for('auth.login'))
+    flash('Registration successful!')
+    return redirect(url_for('main.profile')) 
 
 @auth.route('/logout')
 @login_required
