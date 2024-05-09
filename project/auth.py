@@ -15,15 +15,15 @@ def login():
 
 @auth.route('/login', methods=['POST'])
 def login_post():
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = request.form['email']
+    password = request.form['password']
     remember = True if request.form.get('remember') else False
 
     user = User.query.filter_by(email=email).first()
 
     # check if the user actually exists
     # take the user-supplied password and compare it with the stored password
-    if not user or not (user.password == password):
+    if user and check_password_hash(user.password, password):
         flash('Please check your login details and try again.')
         current_app.logger.warning("User login failed")
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
@@ -39,15 +39,15 @@ def signup():
 @auth.route('/signup', methods=['POST'])
 def signup_post():
     email = request.form['email']
-    name = request.form['name']
     password = request.form['password'] 
+    hashed_password = generate_password_hash(password, method='sha256')
 # Check if user already exists
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         flash('Email address already in use.')
         return redirect(url_for('auth.signup'))
 # Create new user instance
-    new_user = User(email=email, password=password)  # Assume password hashing is handled in the User model 
+    new_user = User(email=email, password=hashed_password)  # Assume password hashing is handled in the User model 
     # Add new user to the database
     db.session.add(new_user)
     db.session.commit()
